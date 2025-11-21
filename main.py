@@ -3,7 +3,7 @@ from fastapi import FastAPI, Body, status, HTTPException
 from fastapi.responses import RedirectResponse
 from database.db import engine
 from database.models import Base
-from exceptions import NoLongUrlFoundError
+from exceptions import NoLongUrlFoundError, SlugAlreadyExistsError
 from service import generate_shore_url, get_url_by_slug
 
 
@@ -19,7 +19,10 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post('/short_url')
 async def generate_slug(long_url: str = Body(embed=True)):
-    new_slug = await generate_shore_url(long_url)
+    try:
+        new_slug = await generate_shore_url(long_url)
+    except SlugAlreadyExistsError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Не удалось создать ссылку')
     return {'data': new_slug}
 
 
